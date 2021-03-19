@@ -5,7 +5,7 @@
 ```ts
 import React, { FC, VFC } from 'react';
 import * as ReactDOM from 'react-dom';
-import { AxiosProvider, createApiHook, useFetch } from '../src';
+import { AxiosProvider, createApiHook, useFetch } from 'use-axios-api';
 
 const App = () => {
     return (
