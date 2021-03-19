@@ -2,30 +2,34 @@ import hash from 'object-hash';
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { AsyncResult, isError, ResultError } from './Result';
 
-type FetchResultExtra<R, E> = {
+type FetchResultExtra<R, E, S> = {
     loading: boolean;
     error: ResultError<E> | null;
     refetch: () => AsyncResult<R, E>;
     refetching: boolean;
-    setData: Dispatch<SetStateAction<R | undefined>>;
+    setData: Dispatch<SetStateAction<S | undefined>>;
 };
 
-export type FetchResult<R, E> = [R | undefined, FetchResultExtra<R, E>];
+export type FetchResult<R, E, S> = [S | undefined, FetchResultExtra<R, E, S>];
 
-export type UseFetchOptions = {
+export type UseFetchOptions<R = any, S = any> = {
     skip?: boolean;
     version?: number;
+    onData?: (prev: S | undefined, data: R) => S;
 };
 
-export function useFetch<R, E>(caller: () => AsyncResult<R, E>, options?: UseFetchOptions): FetchResult<R, E>;
-export function useFetch<P extends any[], R, E>(
+export function useFetch<R, E, S = R>(
+    caller: () => AsyncResult<R, E>,
+    options?: UseFetchOptions<R, S>,
+): FetchResult<R, E, S>;
+export function useFetch<P extends any[], R, E, S = R>(
     caller: (...args: P) => AsyncResult<R, E>,
-    options: { args: P } & UseFetchOptions,
-): FetchResult<R, E>;
-export function useFetch<P, R, E>(caller: (args: P) => AsyncResult<R, E>, options?: any): FetchResult<R, E> {
-    const { args, skip = false, version = 0 } = options || {};
+    options: { args: P } & UseFetchOptions<R, S>,
+): FetchResult<R, E, S>;
+export function useFetch<P, R, E, S = R>(caller: (args: P) => AsyncResult<R, E>, options?: any): FetchResult<R, E, S> {
+    const { args, skip = false, version = 0, onData } = options || {};
 
-    const [data, setData] = useState<R | undefined>(undefined);
+    const [data, setData] = useState<S | undefined>(undefined);
     const [error, setError] = useState<ResultError<E> | null>(null);
     const [loading, setLoading] = useState(!skip);
     const [refetching, setRefetching] = useState(false);
@@ -46,7 +50,7 @@ export function useFetch<P, R, E>(caller: (args: P) => AsyncResult<R, E>, option
                     if (isError(res)) {
                         setError(res);
                     } else {
-                        setData(res);
+                        setData((prev) => (onData ? onData(prev, res) : res));
                         setError(null);
                     }
                     return res;

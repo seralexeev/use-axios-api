@@ -18,7 +18,11 @@ const useApi = createApiHook({
 });
 
 const Component: VFC = () => {
-    const [data, { loading, refetch, refetching }] = useFetch(useApi((x) => x.httpBinGet));
+    const [data, { loading, refetch, refetching }] = useFetch(
+        useApi((x) => x.httpBinGet),
+        { onData: (prev: any[] = [], data) => [...prev, data] },
+    );
+
     if (loading) {
         return <div>loading...</div>;
     }
