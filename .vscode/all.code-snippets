@@ -1,0 +1,14 @@
+{
+    "rfc": {
+        "prefix": ["rfc"],
+        "body": [
+            "import React, { VFC } from 'react';\n\ntype ${TM_FILENAME_BASE}Props = {\n\n}\n\nexport const ${TM_FILENAME_BASE}: VFC<${TM_FILENAME_BASE}Props> = (props) => {\n    return $2\n}"
+        ]
+    },
+    "rfcx": {
+        "prefix": ["rfcx"],
+        "body": [
+            "import React, { VFC } from 'react';\n\ntype $1Props = {\n\n}\n\nexport const $1: VFC<$1Props> = (props) => {\n    return $2\n}"
+        ]
+    }
+}

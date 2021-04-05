@@ -1,6 +1,6 @@
-import React, { FC, VFC } from 'react';
+import React, { VFC } from 'react';
 import * as ReactDOM from 'react-dom';
-import { AxiosProvider, createApiHook, useFetch } from '../src';
+import { AxiosProvider, AxiosRequest, createApiHook, ifSuccess } from '../src';
 
 const App = () => {
     return (
@@ -13,15 +13,15 @@ const App = () => {
 };
 
 const useApi = createApiHook({
-    httpBinGet: ({ get }) => () => get<any>('https://httpbin.org/get'),
-    httpBinStatus: ({ get }) => (status: string) => get<any>(`https://httpbin.org/status/${status}`),
+    httpBinGet: ({ get }: AxiosRequest) => () =>
+        get<{ status: string }>('https://httpbin.org/get').then(ifSuccess((x) => [x])),
+    httpBinStatus: ({ get }) => (status: string) => get<{ status: string }>(`https://httpbin.org/status/${status}`),
 });
 
 const Component: VFC = () => {
-    const [data, { loading, refetch, refetching }] = useFetch(
-        useApi((x) => x.httpBinGet),
-        { onData: (prev: any[] = [], data) => [...prev, data] },
-    );
+    const [data, { loading, refetch, refetching }] = useApi((x) => x.httpBinGet).fetch({
+        onData: (prev = [], data) => [...prev, ...data],
+    });
 
     if (loading) {
         return <div>loading...</div>;
@@ -36,10 +36,9 @@ const Component: VFC = () => {
 };
 
 const ComponentStatus: VFC = () => {
-    const [data, { loading, refetch, refetching, error }] = useFetch(
-        useApi((x) => x.httpBinStatus),
-        { args: ['500'] },
-    );
+    const [data, { loading, refetch, refetching, error }] = useApi((x) => x.httpBinStatus).fetch({
+        args: ['500'],
+    });
 
     if (loading) {
         return <div>loading...</div>;
@@ -55,10 +54,9 @@ const ComponentStatus: VFC = () => {
 };
 
 const ComponentImperative: VFC = () => {
-    const [data, { loading, refetch, refetching }] = useFetch(
-        useApi((x) => x.httpBinGet),
-        { skip: true },
-    );
+    const [data, { loading, refetch, refetching }] = useApi((x) => x.httpBinGet).fetch({
+        skip: true,
+    });
 
     if (loading) {
         return <div>loading...</div>;
