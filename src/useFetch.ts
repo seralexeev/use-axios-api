@@ -8,13 +8,14 @@ type FetchResultExtra<R, E, S> = {
     refetch: () => AsyncResult<R, E>;
     refetching: boolean;
     setData: Dispatch<SetStateAction<S | undefined>>;
+    version: number;
 };
 
-export type FetchResult<R, E, S> = [S | undefined, FetchResultExtra<R, E, S>];
+export type FetchResult<R, E, S = R> = [S | undefined, FetchResultExtra<R, E, S>];
 
 export type UseFetchOptions<R = any, S = any> = {
     skip?: boolean;
-    version?: number;
+    refreshVersion?: number;
     onData?: (prev: S | undefined, data: R) => S;
 };
 
@@ -26,14 +27,18 @@ export function useFetch<P extends any[], R, E, S = R>(
     caller: (...args: P) => AsyncResult<R, E>,
     options: { args: P } & UseFetchOptions<R, S>,
 ): FetchResult<R, E, S>;
-export function useFetch<P, R, E, S = R>(caller: (args: P) => AsyncResult<R, E>, options?: any): FetchResult<R, E, S> {
-    const { args, skip = false, version = 0, onData } = options || {};
+export function useFetch<P extends any[], R, E, S = R>(
+    caller: (...args: P) => AsyncResult<R, E>,
+    options?: any,
+): FetchResult<R, E, S> {
+    const { args = [], skip = false, refreshVersion = 0, onData } = options || {};
 
     const [data, setData] = useState<S | undefined>(undefined);
     const [error, setError] = useState<ResultError<E> | null>(null);
     const [loading, setLoading] = useState(!skip);
     const [refetching, setRefetching] = useState(false);
     const count = useRef(0);
+    const [version, setVersion] = useState(0);
 
     const refetch = useCallback(
         () => {
@@ -45,12 +50,13 @@ export function useFetch<P, R, E, S = R>(caller: (args: P) => AsyncResult<R, E>,
 
             const version = ++count.current;
 
-            return caller(args as any)
+            return caller(...args)
                 .then((res) => {
                     if (isError(res)) {
                         setError(res);
                     } else {
                         setData((prev) => (onData ? onData(prev, res) : res));
+                        setVersion((x) => x + 1);
                         setError(null);
                     }
                     return res;
@@ -74,7 +80,7 @@ export function useFetch<P, R, E, S = R>(caller: (args: P) => AsyncResult<R, E>,
             void refetch();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refetch, skip, version]);
+    }, [refetch, skip, refreshVersion]);
 
-    return [data, { loading, error, refetch, refetching, setData }];
+    return [data, { loading, error, refetch, refetching, setData, version }];
 }

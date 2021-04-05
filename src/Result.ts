@@ -1,31 +1,18 @@
-export type ResultError<T = unknown> = {
-    __error: boolean;
-    code: string;
-    message: string;
-    payload?: T;
-    error?: any;
-};
-
+export type ResultError<T = unknown> = { __error: boolean; code: string; message: string; payload?: T; error?: any };
 export type Result<T, P = unknown> = T | ResultError<P>;
 export type AsyncResult<T = unknown, P = unknown> = Promise<Result<T, P>>;
 
-export const ifSuccess = <OldResult, Error, NewResult>(map: (res: OldResult) => NewResult | Promise<NewResult>) => {
-    return (res: Result<OldResult, Error>) => {
-        if (isSuccess(res)) {
-            return map(res);
-        }
-
-        return res;
+export const ifSuccess = <TSrcResult, Error, TDestResult>(
+    map: (res: TSrcResult) => TDestResult | Promise<TDestResult>,
+) => {
+    return (res: Result<TSrcResult, Error>) => {
+        return isSuccess(res) ? map(res) : res;
     };
 };
 
 export const ifError = <T, P, R>(map: (res: ResultError<P>) => R | Promise<R>) => {
     return (res: Result<T, P>) => {
-        if (isError(res)) {
-            return map(res);
-        }
-
-        return res;
+        return isError(res) ? map(res) : res;
     };
 };
 

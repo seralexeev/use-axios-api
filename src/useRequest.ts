@@ -28,7 +28,7 @@ export const useRequest = (axios: AxiosInstance, options: RequestOptions = {}): 
         if (cancelOnUnmount) {
             return cancelRef.current?.cancel;
         }
-        
+
         return undefined;
     }, [cancelOnUnmount, cancelRef]);
 

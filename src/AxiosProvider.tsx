@@ -5,7 +5,7 @@ import React, { createContext, FC, useCallback, useContext, useMemo, useRef, use
 import { ifSuccess, isError, makeError, Result, ResultError } from './Result';
 import { RequestOptions, useRequest } from './useRequest';
 
-export type AuthContextValue = {
+type AuthContextValue = {
     accessToken: string | null;
     userId: string | null;
     setAccessToken: (token: string | null) => void;
@@ -20,7 +20,7 @@ type AxiosContextType = {
 };
 const AxiosContext = createContext<AxiosContextType>(null!);
 
-export const useAxiosInstance = (auth?: true) => {
+export const useAxiosInstance = (auth?: boolean) => {
     const { authenticated, axios } = useContext(AxiosContext);
     return auth ? authenticated : axios;
 };
@@ -33,7 +33,7 @@ type AuthProps = {
     setRefreshToken?: (token: string | null) => Promise<void>;
 };
 
-type AxiosProviderProps = {
+export type AxiosProviderProps = {
     config?: AxiosRequestConfig;
     onError?: (error: ResultError) => void;
     postInitialize?: (axios: AxiosInstance) => void;
@@ -65,7 +65,7 @@ export const AxiosProvider: FC<AxiosProviderProps> = ({ children, config, onErro
     }
 };
 
-export const SimpleAxiosProvider: FC<{
+const SimpleAxiosProvider: FC<{
     createAxios: () => AxiosInstance;
     errorInterceptor: (e: any) => ResultError<unknown>;
 }> = ({ createAxios, children, errorInterceptor }) => {
@@ -81,7 +81,7 @@ export const SimpleAxiosProvider: FC<{
     return <AxiosContext.Provider value={value} children={children} />;
 };
 
-export const AuthAxiosProvider: FC<{
+const AuthAxiosProvider: FC<{
     createAxios: () => AxiosInstance;
     auth: AuthProps;
     errorInterceptor: (e: any) => ResultError<unknown>;
@@ -171,7 +171,7 @@ export const AuthAxiosProvider: FC<{
 
 const handleError = (error: any, onError?: (error: ResultError) => void) => {
     if (Axios.isCancel(error)) {
-        return makeError('UNKNOWN', 'Request was canceled', { error });
+        return makeError('CANCELED', 'Request was canceled', { error });
     }
 
     let resError: ResultError;
@@ -182,12 +182,13 @@ const handleError = (error: any, onError?: (error: ResultError) => void) => {
     } else if (error.name === 'ErrorResultError') {
         resError = error.result;
     } else {
+        const message = error.message ?? error.code ?? 'Unknown error';
         if (!error.response?.data) {
-            resError = makeError('UNKNOWN', 'Unknown error', { error });
+            resError = makeError('UNKNOWN', message, { error });
         } else {
             resError = isError(error.response?.data)
                 ? error.response?.data
-                : makeError('UNKNOWN', 'Unknown error', { payload: error?.response?.data });
+                : makeError('UNKNOWN', message, { payload: error?.response?.data });
         }
     }
 
